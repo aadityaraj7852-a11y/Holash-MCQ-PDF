@@ -2,79 +2,89 @@
 <html lang="hi">
 <head>
 <meta charset="utf-8"/>
-<title>MCQ PDF Pro Generator</title>
+
+<title>MCQ PDF Final (Hindi Perfect)</title>
 
 <!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
 
-<!-- jsPDF -->
+<!-- libs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 
 body{
-  font-family:'Poppins',sans-serif;
   background:#0f172a;
   color:#fff;
+  font-family:'Noto Sans Devanagari';
   margin:20px;
-}
-
-h2{
-  font-family:'Kalam';
-  text-align:center;
-  font-size:30px;
-  color:#ffd54f;
-}
-
-.card{
-  background:#172033;
-  padding:16px;
-  border-radius:12px;
-  margin-bottom:15px;
 }
 
 textarea,input{
   width:100%;
   padding:8px;
+  margin:6px 0;
   border-radius:8px;
-  border:1px solid #2e3b55;
-  background:#0b1220;
+  background:#111;
   color:#fff;
-  margin-top:6px;
+  border:1px solid #333;
 }
 
 button{
-  padding:9px 14px;
+  padding:8px 12px;
   border:none;
   border-radius:8px;
-  margin:6px 4px;
-  font-weight:600;
+  margin:4px;
   cursor:pointer;
+  font-weight:bold;
 }
 
 .blue{background:#0b74ff}
 .green{background:#10b981}
 .orange{background:#f59e0b}
-.red{background:#ef4444}
 
 .preview{
-  max-height:420px;
-  overflow:auto;
-  margin-top:10px;
+  margin-top:15px;
+}
+
+/* ===== PDF PAGE LAYOUT ===== */
+
+.page{
+  width:794px; /* A4 */
+  height:1123px;
+  background:#fff;
+  color:#000;
+  margin:15px auto;
+  padding:40px;
+  display:grid;
+  grid-template-columns:1fr 1fr; /* LEFT RIGHT */
+  gap:25px;
+  font-family:'Noto Sans Devanagari';
 }
 
 .qbox{
-  background:#0b1220;
-  padding:10px;
-  border-radius:10px;
-  margin-bottom:10px;
-  font-family:'Kalam';
-  white-space:pre-wrap;
-  border:1px solid #2e3b55;
+  font-size:15px;
+  line-height:1.4;
 }
 
-.qbox[contenteditable]{
-  outline:1px dashed #555;
+.divider{
+  grid-column:1/3;
+  height:2px;
+  background:#333;
+  margin:10px 0;
+}
+
+.exp{
+  border:2px solid #000;
+  border-radius:12px;
+  padding:6px;
+  margin-top:6px;
+}
+
+.ans{
+  font-weight:bold;
+  margin-top:4px;
 }
 
 </style>
@@ -82,179 +92,123 @@ button{
 
 <body>
 
-<h2>MCQ PDF Pro Generator</h2>
+<h2>MCQ PDF Generator (Hindi Perfect)</h2>
 
-<div class="card">
-
-<textarea id="jsonArea" rows="5" placeholder="JSON paste here..."></textarea>
+<textarea id="jsonArea" rows="5" placeholder="JSON paste here"></textarea>
 
 <button class="orange" onclick="importJSON()">Import JSON</button>
-<button class="green" onclick="add()">Add Manual</button>
 <button class="blue" onclick="translateAll()">Translate</button>
-<button class="blue" onclick="generatePDF()">Generate PDF</button>
-<button class="red" onclick="clearAll()">Clear</button>
+<button class="green" onclick="generatePDF()">Generate PDF</button>
 
-<hr>
-
-<textarea id="q" placeholder="Question (Hindi)"></textarea>
-<input id="o1" placeholder="Option A">
-<input id="o2" placeholder="Option B">
-<input id="o3" placeholder="Option C">
-<input id="o4" placeholder="Option D">
-<input id="ans" placeholder="Answer (A/B/C/D)">
-<textarea id="exp" placeholder="Explanation"></textarea>
-
-</div>
-
-<div class="preview" id="preview"></div>
+<div id="preview" class="preview"></div>
 
 <script>
 
 const { jsPDF } = window.jspdf;
+
 let DATA=[];
 
 
-// -------- GOOGLE TRANSLATE -----------
-async function translate(text){
-  const url=`https://translate.googleapis.com/translate_a/single?client=gtx&sl=hi&tl=en&dt=t&q=${encodeURIComponent(text)}`;
-  const r=await fetch(url);
-  const d=await r.json();
-  return d[0].map(x=>x[0]).join("");
-}
-
-
-// ---------- ADD MANUAL ----------
-function add(){
-
-  DATA.push({
-    question:q.value,
-    options:[o1.value,o2.value,o3.value,o4.value],
-    answer:ans.value,
-    exp:exp.value,
-    eng:{}
-  });
-
-  q.value=o1.value=o2.value=o3.value=o4.value=ans.value=exp.value="";
+// ------------ IMPORT JSON ------------
+function importJSON(){
+  DATA = JSON.parse(jsonArea.value);
   render();
 }
 
 
-// ---------- JSON IMPORT ----------
-function importJSON(){
-  try{
-    const j=JSON.parse(jsonArea.value);
-    DATA=j;
-    render();
-  }catch{
-    alert("Invalid JSON");
-  }
+// ------------ GOOGLE TRANSLATE ------------
+async function translate(t){
+  const r=await fetch(
+  `https://translate.googleapis.com/translate_a/single?client=gtx&sl=hi&tl=en&dt=t&q=${encodeURIComponent(t)}`
+  );
+  const d=await r.json();
+  return d[0].map(x=>x[0]).join("");
 }
 
-
-// ---------- PREVIEW ----------
-function render(){
-
-  preview.innerHTML="";
-
-  DATA.forEach((item,i)=>{
-
-    const div=document.createElement("div");
-    div.className="qbox";
-    div.contentEditable=true;
-
-    div.innerText=
-`Q${i+1}. ${item.question}
-
-A. ${item.options[0]}
-B. ${item.options[1]}
-C. ${item.options[2]}
-D. ${item.options[3]}
-
-Ans: ${item.answer}
-
-Explanation: ${item.exp}`;
-
-    preview.appendChild(div);
-  });
-}
-
-
-// ---------- TRANSLATE BUTTON ----------
 async function translateAll(){
-
-  for(let item of DATA){
-
-    item.eng.question=await translate(item.question);
-
-    item.eng.options=[];
-    for(let o of item.options)
-      item.eng.options.push(await translate(o));
+  for(let q of DATA){
+    q.eng={};
+    q.eng.question=await translate(q.question);
+    q.eng.options=[];
+    for(let o of q.options)
+      q.eng.options.push(await translate(o));
   }
-
   alert("Translated ✓");
 }
 
 
-// ---------- PDF GENERATE ----------
-async function generatePDF(){
+// ------------ PREVIEW RENDER ------------
+function render(){
 
-  const pdf=new jsPDF();
-  pdf.setFont("helvetica");
+  preview.innerHTML="";
 
-  for(let i=0;i<DATA.length;i++){
+  let page=createPage();
+  preview.appendChild(page);
 
-    let d=DATA[i];
+  let count=0;
 
-    let y=20;
+  DATA.forEach((item,i)=>{
 
-    pdf.setFontSize(14);
-
-    // Hindi
-    pdf.text(`Q${i+1}. ${d.question}`,15,y); y+=10;
-
-    d.options.forEach((o,j)=>{
-      pdf.text(`${"ABCD"[j]}. ${o}`,20,y); y+=8;
-    });
-
-    // Divider Line
-    y+=5;
-    pdf.line(10,y,200,y);
-
-    // Explanation Box
-    y+=10;
-    pdf.roundedRect(12,y,186,20,5,5);
-    pdf.text("Explanation:",16,y+7);
-    pdf.text(d.exp,16,y+15);
-
-    // Answer
-    y+=30;
-    pdf.text(`Answer: ${d.answer}`,15,y);
-
-    // English
-    if(d.eng?.question){
-      y+=15;
-      pdf.text("English Version:",15,y); y+=10;
-
-      pdf.text(d.eng.question,15,y); y+=10;
-
-      d.eng.options.forEach((o,j)=>{
-        pdf.text(`${"ABCD"[j]}. ${o}`,20,y); y+=8;
-      });
+    if(count==6){ // 6 questions per page
+      page=createPage();
+      preview.appendChild(page);
+      count=0;
     }
 
-    if(i!=DATA.length-1) pdf.addPage();
+    const div=document.createElement("div");
+    div.className="qbox";
+
+    div.innerHTML=`
+<b>Q${i+1}. ${item.question}</b><br>
+A. ${item.options[0]}<br>
+B. ${item.options[1]}<br>
+C. ${item.options[2]}<br>
+D. ${item.options[3]}
+
+<div class="divider"></div>
+
+<div class="exp">Explanation: ${item.exp}</div>
+<div class="ans">Answer: ${item.answer}</div>
+
+<br>
+<i>${item.eng?.question || ""}</i>
+`;
+
+    page.appendChild(div);
+    count++;
+  });
+}
+
+
+function createPage(){
+  const d=document.createElement("div");
+  d.className="page";
+  return d;
+}
+
+
+// ------------ PDF GENERATE ------------
+async function generatePDF(){
+
+  const pages=document.querySelectorAll(".page");
+
+  const pdf=new jsPDF('p','px',[794,1123]);
+
+  for(let i=0;i<pages.length;i++){
+
+    const canvas=await html2canvas(pages[i]);
+
+    const img=canvas.toDataURL("image/png");
+
+    if(i>0) pdf.addPage();
+
+    pdf.addImage(img,'PNG',0,0,794,1123);
   }
 
   pdf.save("MCQ_Final.pdf");
 }
 
-
-// ---------- CLEAR ----------
-function clearAll(){
-  DATA=[];
-  preview.innerHTML="";
-}
-
 </script>
+
 </body>
 </html>
