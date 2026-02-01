@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8"/>
 
-<title>Mockrise MCQ Book Generator</title>
+<title>Mockrise MCQ Book</title>
 
-<!-- Hindi font -->
+<!-- correct CDN -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf.umd.min.js"></script>
 
 <style>
 
@@ -19,28 +19,26 @@ body{
   background:#0f172a;
   color:#fff;
   font-family:'Noto Sans Devanagari';
-  margin:18px;
+  margin:16px;
 }
-
-h2{ text-align:center }
 
 textarea,input{
   width:100%;
-  padding:7px;
+  padding:8px;
+  margin-top:6px;
   border-radius:8px;
   border:1px solid #333;
   background:#111;
   color:#fff;
-  margin-top:5px;
 }
 
 button{
-  padding:7px 12px;
+  padding:8px 12px;
   border:none;
   border-radius:8px;
-  margin:4px;
-  cursor:pointer;
+  margin:5px 3px;
   font-weight:bold;
+  cursor:pointer;
 }
 
 .blue{background:#0b74ff}
@@ -62,13 +60,13 @@ button{
   background:#fff;
   color:#000;
   margin:25px auto;
+
+  padding:110px 60px 100px 60px;
   box-sizing:border-box;
-  padding:100px 60px 100px 60px;
 
   display:grid;
   grid-template-columns:1fr 1fr;
-  column-gap:40px;
-  row-gap:18px;
+  gap:20px;
 
   font-family:'Noto Sans Devanagari';
   position:relative;
@@ -77,7 +75,7 @@ button{
 /* header line */
 .header{
   position:absolute;
-  top:20px;
+  top:25px;
   left:40px;
   right:40px;
   border-top:2px solid #000;
@@ -85,23 +83,21 @@ button{
   font-weight:bold;
 }
 
-.header span{
-  float:left;
-}
-
-/* footer */
+/* footer page number */
 .footer{
   position:absolute;
-  bottom:20px;
+  bottom:25px;
   left:0;
   right:0;
   text-align:center;
   font-size:14px;
 }
 
+/* question style */
 .qbox{
   font-size:14px;
-  line-height:1.4;
+  line-height:1.45;
+  white-space:pre-wrap;
 }
 
 .divider{
@@ -111,7 +107,7 @@ button{
 
 .exp{
   border:2px solid #000;
-  border-radius:12px;
+  border-radius:10px;
   padding:5px;
 }
 
@@ -154,7 +150,6 @@ button{
 
 <div id="preview"></div>
 
-
 <script>
 
 const { jsPDF } = window.jspdf;
@@ -162,7 +157,7 @@ const { jsPDF } = window.jspdf;
 let DATA=[];
 
 
-/* -------- Manual Add -------- */
+/* -------- ADD MANUAL -------- */
 
 function addManual(){
 
@@ -178,15 +173,19 @@ function addManual(){
 }
 
 
-/* -------- JSON Import -------- */
+/* -------- JSON IMPORT -------- */
 
 function importJSON(){
-  DATA=JSON.parse(jsonArea.value);
-  render();
+  try{
+    DATA=JSON.parse(jsonArea.value);
+    render();
+  }catch{
+    alert("Invalid JSON");
+  }
 }
 
 
-/* -------- Preview Render -------- */
+/* -------- PREVIEW RENDER -------- */
 
 function render(){
 
@@ -211,18 +210,15 @@ function render(){
     div.className="qbox";
     div.contentEditable=true;
 
-    div.innerHTML=`
-<b>Q${i+1}. ${item.question}</b><br>
+    div.innerHTML=
+`<b>Q${i+1}. ${item.question}</b><br>
 A. ${item.options[0]}<br>
 B. ${item.options[1]}<br>
 C. ${item.options[2]}<br>
 D. ${item.options[3]}
-
 <div class="divider"></div>
-
 <div class="exp">Explanation: ${item.exp}</div>
-<div class="ans">Answer: ${item.answer}</div>
-`;
+<div class="ans">Answer: ${item.answer}</div>`;
 
     page.appendChild(div);
     count++;
@@ -230,7 +226,7 @@ D. ${item.options[3]}
 }
 
 
-/* -------- Page Template -------- */
+/* -------- CREATE PAGE -------- */
 
 function createPage(no){
 
@@ -239,11 +235,11 @@ function createPage(no){
 
   const header=document.createElement("div");
   header.className="header";
-  header.innerHTML="<span>Mockrise</span>";
+  header.innerText="Mockrise";
 
   const footer=document.createElement("div");
   footer.className="footer";
-  footer.innerText="Page " + no;
+  footer.innerText="Page "+no;
 
   p.appendChild(header);
   p.appendChild(footer);
@@ -269,11 +265,11 @@ async function generatePDF(){
     pdf.addImage(img,'PNG',0,0,794,1123);
   }
 
-  pdf.save("Mockrise_MCQ_Book.pdf");
+  pdf.save("Mockrise_Book.pdf");
 }
 
 
-/* -------- Clear -------- */
+/* -------- CLEAR -------- */
 
 function clearAll(){
   DATA=[];
