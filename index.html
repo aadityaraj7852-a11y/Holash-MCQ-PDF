@@ -3,14 +3,13 @@
 <head>
 <meta charset="utf-8"/>
 
-<title>MCQ Book Generator PRO</title>
+<title>Mockrise MCQ Book Generator</title>
 
-<!-- fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600&family=Kalam:wght@700&display=swap" rel="stylesheet">
+<!-- Hindi font -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
 
-<!-- libs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf.umd.min.js"></script>
 
 <style>
 
@@ -23,11 +22,7 @@ body{
   margin:18px;
 }
 
-h2{
-  text-align:center;
-  font-family:'Kalam';
-  color:#ffd54f;
-}
+h2{ text-align:center }
 
 textarea,input{
   width:100%;
@@ -44,8 +39,8 @@ button{
   border:none;
   border-radius:8px;
   margin:4px;
-  font-weight:bold;
   cursor:pointer;
+  font-weight:bold;
 }
 
 .blue{background:#0b74ff}
@@ -68,9 +63,7 @@ button{
   color:#000;
   margin:25px auto;
   box-sizing:border-box;
-
-  /* header & footer gap */
-  padding:70px 60px 90px 60px;
+  padding:100px 60px 100px 60px;
 
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -78,24 +71,32 @@ button{
   row-gap:18px;
 
   font-family:'Noto Sans Devanagari';
+  position:relative;
 }
 
+/* header line */
 .header{
   position:absolute;
   top:20px;
-  left:0;
-  right:0;
-  text-align:center;
+  left:40px;
+  right:40px;
+  border-top:2px solid #000;
+  padding-top:6px;
   font-weight:bold;
 }
 
+.header span{
+  float:left;
+}
+
+/* footer */
 .footer{
   position:absolute;
   bottom:20px;
   left:0;
   right:0;
   text-align:center;
-  font-size:13px;
+  font-size:14px;
 }
 
 .qbox{
@@ -104,7 +105,7 @@ button{
 }
 
 .divider{
-  border-top:1.8px solid #000;
+  border-top:1.5px solid #000;
   margin:6px 0;
 }
 
@@ -112,7 +113,6 @@ button{
   border:2px solid #000;
   border-radius:12px;
   padding:5px;
-  font-size:13px;
 }
 
 .ans{
@@ -120,7 +120,6 @@ button{
   margin-top:3px;
 }
 
-/* preview editable */
 .qbox[contenteditable]{
   outline:1px dashed #aaa;
 }
@@ -130,7 +129,7 @@ button{
 
 <body>
 
-<h2>MCQ Book Generator</h2>
+<h2>Mockrise MCQ Book Generator</h2>
 
 <div class="controls">
 
@@ -138,13 +137,12 @@ button{
 
 <button class="orange" onclick="importJSON()">Import JSON</button>
 <button class="green" onclick="addManual()">Add Manual</button>
-<button class="blue" onclick="translateAll()">Translate</button>
 <button class="blue" onclick="generatePDF()">Generate PDF</button>
 <button class="red" onclick="clearAll()">Clear</button>
 
 <hr>
 
-<input id="q" placeholder="Question (Hindi)">
+<input id="q" placeholder="Question">
 <input id="o1" placeholder="Option A">
 <input id="o2" placeholder="Option B">
 <input id="o3" placeholder="Option C">
@@ -156,13 +154,15 @@ button{
 
 <div id="preview"></div>
 
+
 <script>
 
 const { jsPDF } = window.jspdf;
+
 let DATA=[];
 
 
-/* ---------- ADD MANUAL ---------- */
+/* -------- Manual Add -------- */
 
 function addManual(){
 
@@ -170,8 +170,7 @@ function addManual(){
     question:q.value,
     options:[o1.value,o2.value,o3.value,o4.value],
     answer:ans.value,
-    exp:exp.value,
-    eng:{}
+    exp:exp.value
   });
 
   q.value=o1.value=o2.value=o3.value=o4.value=ans.value=exp.value="";
@@ -179,7 +178,7 @@ function addManual(){
 }
 
 
-/* ---------- JSON ---------- */
+/* -------- JSON Import -------- */
 
 function importJSON(){
   DATA=JSON.parse(jsonArea.value);
@@ -187,31 +186,7 @@ function importJSON(){
 }
 
 
-/* ---------- TRANSLATE ---------- */
-
-async function translate(t){
-  const r=await fetch(
-   `https://translate.googleapis.com/translate_a/single?client=gtx&sl=hi&tl=en&dt=t&q=${encodeURIComponent(t)}`
-  );
-  const d=await r.json();
-  return d[0].map(x=>x[0]).join("");
-}
-
-async function translateAll(){
-
-  for(let item of DATA){
-    item.eng.question=await translate(item.question);
-    item.eng.options=[];
-    for(let o of item.options)
-      item.eng.options.push(await translate(o));
-  }
-
-  render();
-  alert("Translated ✓");
-}
-
-
-/* ---------- PREVIEW (BOOK STYLE) ---------- */
+/* -------- Preview Render -------- */
 
 function render(){
 
@@ -247,8 +222,6 @@ D. ${item.options[3]}
 
 <div class="exp">Explanation: ${item.exp}</div>
 <div class="ans">Answer: ${item.answer}</div>
-
-<br><i>${item.eng?.question || ""}</i>
 `;
 
     page.appendChild(div);
@@ -257,27 +230,29 @@ D. ${item.options[3]}
 }
 
 
+/* -------- Page Template -------- */
+
 function createPage(no){
 
   const p=document.createElement("div");
   p.className="page";
 
-  const head=document.createElement("div");
-  head.className="header";
-  head.innerText="MCQ Practice Book";
+  const header=document.createElement("div");
+  header.className="header";
+  header.innerHTML="<span>Mockrise</span>";
 
-  const foot=document.createElement("div");
-  foot.className="footer";
-  foot.innerText="Page "+no;
+  const footer=document.createElement("div");
+  footer.className="footer";
+  footer.innerText="Page " + no;
 
-  p.appendChild(head);
-  p.appendChild(foot);
+  p.appendChild(header);
+  p.appendChild(footer);
 
   return p;
 }
 
 
-/* ---------- PDF ---------- */
+/* -------- PDF -------- */
 
 async function generatePDF(){
 
@@ -294,11 +269,11 @@ async function generatePDF(){
     pdf.addImage(img,'PNG',0,0,794,1123);
   }
 
-  pdf.save("MCQ_Book.pdf");
+  pdf.save("Mockrise_MCQ_Book.pdf");
 }
 
 
-/* ---------- CLEAR ---------- */
+/* -------- Clear -------- */
 
 function clearAll(){
   DATA=[];
@@ -306,5 +281,6 @@ function clearAll(){
 }
 
 </script>
+
 </body>
 </html>
