@@ -176,7 +176,15 @@
     .notes th { background: #f0f0f0; font-weight: bold; }
     .opt { margin-left: 16px; margin-bottom: 4px; }
     .exp { margin: 12px 0 8px; padding: 8px 12px; border: 1px solid #666; border-radius: 6px; background: #f8f8f8; font-size: 13px; }
-    .ans { color: #047857; font-weight: bold; margin: 8px 0; font-size: 14px; }
+
+    /* उत्तर अब काला */
+    .ans {
+      color: #000000;                /* काला कर दिया */
+      font-weight: bold;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+
     .middleLine { position: absolute; top: 160px; bottom: 100px; left: 50%; width: 2px; background: #000; }
     .bottomLine { position: absolute; bottom: 80px; left: 80px; right: 80px; border-top: 2px solid #000; }
 
@@ -255,7 +263,7 @@
   </button>
 
   <button class="big-download-btn" onclick="generatePDF()">
-    <i class="fas fa-file-pdf"></i> PDF डाउनलोड करें (Mockrise Watermark के साथ)
+    <i class="fas fa-file-pdf"></i> PDF डाउनलोड करें (Mockrise Watermark)
   </button>
 
   <div class="preview-area" id="preview"></div>
@@ -455,7 +463,7 @@ async function generatePDF() {
   preview.innerHTML = '';
   renderIndexAndChapters(preview);
 
-  await new Promise(r => setTimeout(r, 1500)); // rendering के लिए समय
+  await new Promise(r => setTimeout(r, 1500));
 
   const pages = preview.querySelectorAll('.page');
   const pdf = new jsPDF('p', 'px', [794, 1123]);
@@ -464,31 +472,29 @@ async function generatePDF() {
     if (i > 0) pdf.addPage();
 
     const canvas = await html2canvas(pages[i], {
-      scale: 2.5,
+      scale: 2.0,                    // साइज़ कम करने के लिए 2.0
       useCORS: true,
       letterRendering: true,
       logging: false
     });
 
-    const img = canvas.toDataURL('image/png');
-    pdf.addImage(img, 'PNG', 0, 0, 794, 1123);
+    const img = canvas.toDataURL('image/jpeg', 0.72);   // jpeg + 72% quality
 
-    // Watermark: "Mockrise" diagonal
+    pdf.addImage(img, 'JPEG', 0, 0, 794, 1123, undefined, 'FAST');
+
+    // Watermark
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(60);
-    pdf.setTextColor(180, 180, 180); // हल्का ग्रे
+    pdf.setTextColor(180, 180, 180);
     pdf.setGState(new pdf.GState({ opacity: 0.12 }));
 
-    // Diagonal placement - page के center से
-    const x = 397;  // center x
-    const y = 561;  // center y
     pdf.saveGraphicsState();
-    pdf.translate(x, y);
+    pdf.translate(397, 561);
     pdf.rotate(-45);
-    pdf.text("Mockrise", -180, 0, { baseline: 'middle' }); // -180 से left shift ताकि center रहे
+    pdf.text("Mockrise", -180, 0, { baseline: 'middle' });
     pdf.restoreGraphicsState();
 
-    pdf.setGState(new pdf.GState({ opacity: 1 })); // reset
+    pdf.setGState(new pdf.GState({ opacity: 1 }));
   }
 
   pdf.save('Mockrise_Book.pdf');
