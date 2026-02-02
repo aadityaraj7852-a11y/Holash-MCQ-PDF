@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 
-<title>Mockrise MCQ Book</title>
+<title>Mockrise MCQ Book Pro</title>
 
-<!-- correct CDN -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
@@ -19,21 +18,21 @@ body{
   background:#0f172a;
   color:#fff;
   font-family:'Noto Sans Devanagari';
-  margin:16px;
+  margin:15px;
 }
 
 textarea,input{
   width:100%;
-  padding:8px;
-  margin-top:6px;
-  border-radius:8px;
+  padding:7px;
+  border-radius:7px;
   border:1px solid #333;
   background:#111;
   color:#fff;
+  margin-top:6px;
 }
 
 button{
-  padding:8px 12px;
+  padding:7px 12px;
   border:none;
   border-radius:8px;
   margin:5px 3px;
@@ -59,61 +58,75 @@ button{
   height:1123px;
   background:#fff;
   color:#000;
-  margin:25px auto;
-
-  padding:110px 60px 100px 60px;
+  margin:30px auto;
+  padding:100px 60px 90px 60px;
   box-sizing:border-box;
-
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
-
-  font-family:'Noto Sans Devanagari';
   position:relative;
+  font-family:'Noto Sans Devanagari';
+
+  display:flex;
+  gap:30px;
 }
 
-/* header line */
+.column{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* header */
 .header{
   position:absolute;
   top:25px;
   left:40px;
   right:40px;
   border-top:2px solid #000;
-  padding-top:6px;
+  padding-top:5px;
   font-weight:bold;
 }
 
-/* footer page number */
+/* footer */
 .footer{
   position:absolute;
-  bottom:25px;
+  bottom:20px;
   left:0;
   right:0;
   text-align:center;
-  font-size:14px;
+  font-size:13px;
 }
 
 /* question style */
 .qbox{
+  font-size:13px;
+  line-height:1.35;
+  white-space:normal;
+}
+
+.qbox b{
   font-size:14px;
-  line-height:1.45;
-  white-space:pre-wrap;
+}
+
+.option{
+  margin-left:10px;
+  margin-bottom:2px;
 }
 
 .divider{
-  border-top:1.5px solid #000;
-  margin:6px 0;
+  border-top:1px solid #000;
+  margin:4px 0;
 }
 
 .exp{
-  border:2px solid #000;
-  border-radius:10px;
-  padding:5px;
+  border:1.5px solid #000;
+  border-radius:8px;
+  padding:4px;
+  font-size:12px;
 }
 
 .ans{
   font-weight:bold;
-  margin-top:3px;
+  font-size:12px;
 }
 
 .qbox[contenteditable]{
@@ -129,7 +142,7 @@ button{
 
 <div class="controls">
 
-<textarea id="jsonArea" rows="4" placeholder="JSON paste here..."></textarea>
+<textarea id="jsonArea" rows="4" placeholder="JSON paste here"></textarea>
 
 <button class="orange" onclick="importJSON()">Import JSON</button>
 <button class="green" onclick="addManual()">Add Manual</button>
@@ -143,7 +156,7 @@ button{
 <input id="o2" placeholder="Option B">
 <input id="o3" placeholder="Option C">
 <input id="o4" placeholder="Option D">
-<input id="ans" placeholder="Answer (A/B/C/D)">
+<input id="ans" placeholder="Answer">
 <input id="exp" placeholder="Explanation">
 
 </div>
@@ -157,10 +170,9 @@ const { jsPDF } = window.jspdf;
 let DATA=[];
 
 
-/* -------- ADD MANUAL -------- */
+/* -------- ADD -------- */
 
 function addManual(){
-
   DATA.push({
     question:q.value,
     options:[o1.value,o2.value,o3.value,o4.value],
@@ -173,56 +185,11 @@ function addManual(){
 }
 
 
-/* -------- JSON IMPORT -------- */
+/* -------- JSON -------- */
 
 function importJSON(){
-  try{
-    DATA=JSON.parse(jsonArea.value);
-    render();
-  }catch{
-    alert("Invalid JSON");
-  }
-}
-
-
-/* -------- PREVIEW RENDER -------- */
-
-function render(){
-
-  preview.innerHTML="";
-
-  let page=createPage(1);
-  preview.appendChild(page);
-
-  let perPage=8;
-  let count=0;
-  let pageNo=1;
-
-  DATA.forEach((item,i)=>{
-
-    if(count===perPage){
-      page=createPage(++pageNo);
-      preview.appendChild(page);
-      count=0;
-    }
-
-    const div=document.createElement("div");
-    div.className="qbox";
-    div.contentEditable=true;
-
-    div.innerHTML=
-`<b>Q${i+1}. ${item.question}</b><br>
-A. ${item.options[0]}<br>
-B. ${item.options[1]}<br>
-C. ${item.options[2]}<br>
-D. ${item.options[3]}
-<div class="divider"></div>
-<div class="exp">Explanation: ${item.exp}</div>
-<div class="ans">Answer: ${item.answer}</div>`;
-
-    page.appendChild(div);
-    count++;
-  });
+  DATA=JSON.parse(jsonArea.value);
+  render();
 }
 
 
@@ -230,8 +197,8 @@ D. ${item.options[3]}
 
 function createPage(no){
 
-  const p=document.createElement("div");
-  p.className="page";
+  const page=document.createElement("div");
+  page.className="page";
 
   const header=document.createElement("div");
   header.className="header";
@@ -241,10 +208,74 @@ function createPage(no){
   footer.className="footer";
   footer.innerText="Page "+no;
 
-  p.appendChild(header);
-  p.appendChild(footer);
+  const col1=document.createElement("div");
+  col1.className="column";
 
-  return p;
+  const col2=document.createElement("div");
+  col2.className="column";
+
+  page.append(header,footer,col1,col2);
+
+  return {page,col1,col2};
+}
+
+
+/* -------- RENDER AUTO FLOW -------- */
+
+function render(){
+
+  preview.innerHTML="";
+
+  let pageNo=1;
+  let {page,col1,col2}=createPage(pageNo);
+  preview.appendChild(page);
+
+  let currentCol=col1;
+
+  DATA.forEach((item,i)=>{
+
+    const box=createQBox(item,i);
+
+    currentCol.appendChild(box);
+
+    // overflow check
+    if(currentCol.scrollHeight > currentCol.clientHeight){
+
+      currentCol.removeChild(box);
+
+      if(currentCol===col1){
+        currentCol=col2;
+        currentCol.appendChild(box);
+      }else{
+        ({page,col1,col2}=createPage(++pageNo));
+        preview.appendChild(page);
+        currentCol=col1;
+        currentCol.appendChild(box);
+      }
+    }
+  });
+}
+
+
+/* -------- QBOX -------- */
+
+function createQBox(item,i){
+
+  const div=document.createElement("div");
+  div.className="qbox";
+  div.contentEditable=true;
+
+  div.innerHTML=
+`<b>Q${i+1}. ${item.question}</b>
+<div class="option">A. ${item.options[0]}</div>
+<div class="option">B. ${item.options[1]}</div>
+<div class="option">C. ${item.options[2]}</div>
+<div class="option">D. ${item.options[3]}</div>
+<div class="divider"></div>
+<div class="exp">Explanation: ${item.exp}</div>
+<div class="ans">Answer: ${item.answer}</div>`;
+
+  return div;
 }
 
 
@@ -253,11 +284,9 @@ function createPage(no){
 async function generatePDF(){
 
   const pages=document.querySelectorAll(".page");
-
   const pdf=new jsPDF('p','px',[794,1123]);
 
   for(let i=0;i<pages.length;i++){
-
     const canvas=await html2canvas(pages[i],{scale:2});
     const img=canvas.toDataURL("image/png");
 
