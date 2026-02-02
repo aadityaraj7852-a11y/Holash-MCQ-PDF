@@ -1,311 +1,450 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="hi">
 <head>
-<meta charset="utf-8"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Book Generator - Kalam Academy Style</title>
 
-<title>Mockrise MCQ Book Pro</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans Devanagari', sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+      margin: 0;
+      padding: 20px;
+    }
 
-<style>
+    .container { max-width: 1400px; margin: 0 auto; }
 
-/* ---------- UI ---------- */
+    .toolbar {
+      background: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
 
-body{
-  background:#0f172a;
-  color:#fff;
-  font-family:'Noto Sans Devanagari';
-  margin:15px;
-}
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-textarea,input{
-  width:100%;
-  padding:7px;
-  border-radius:7px;
-  border:1px solid #333;
-  background:#111;
-  color:#fff;
-  margin-top:6px;
-}
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-danger { background: #ef4444; color: white; }
 
-button{
-  padding:7px 12px;
-  border:none;
-  border-radius:8px;
-  margin:5px 3px;
-  font-weight:bold;
-  cursor:pointer;
-}
+    .json-panel {
+      display: none;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
 
-.blue{background:#0b74ff}
-.green{background:#10b981}
-.orange{background:#f59e0b}
-.red{background:#ef4444}
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      padding: 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 14px;
+      resize: vertical;
+    }
 
-.controls{
-  background:#1e293b;
-  padding:12px;
-  border-radius:10px;
-}
+    .preview-area {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
 
-/* ---------- BOOK PAGE ---------- */
+    .page {
+      width: 794px;
+      height: 1123px;
+      background: white;
+      margin: 20px auto;
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      overflow: hidden;
+      font-size: 14px;
+      line-height: 1.35;
+    }
 
-.page{
-  width:794px;
-  height:1123px;
-  background:#fff;
-  color:#000;
-  margin:30px auto;
-  padding:100px 60px 90px 60px;
-  box-sizing:border-box;
-  position:relative;
-  font-family:'Noto Sans Devanagari';
+    .page-footer {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
+      color: #fff;
+      padding: 6px 24px;
+      border-radius: 20px;
+      font-size: 15px;
+      font-weight: bold;
+      min-width: 60px;
+      text-align: center;
+    }
 
-  display:flex;
-  gap:30px;
-}
+    .page-header { height: 140px; background: #e6e6e6; position: relative; }
+    .strip { position: absolute; top: 0; left: 0; width: 55px; height: 140px; background: #dcdcdc; }
 
-.column{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
+    .page-title {
+      position: absolute;
+      top: 40px;
+      left: 70px;
+      right: 70px;
+      margin-top: 0;
+      text-align: center;
+      font-weight: 700;
+      color: #1e2937;
+      font-size: clamp(20px, 4.2vw, 28px);
+      line-height: 1.3;
+      max-height: 80px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      word-break: break-word;
+      hyphens: auto;
+      padding: 0 20px;
+    }
 
-/* header */
-.header{
-  position:absolute;
-  top:25px;
-  left:40px;
-  right:40px;
-  border-top:2px solid #000;
-  padding-top:5px;
-  font-weight:bold;
-}
+    .running-header { position: absolute; top: 105px; left: 80px; right: 80px; font-size: 13px; font-weight: bold; color: #222; }
+    .running-left { float: left; }
+    .running-right { float: right; }
+    .header-line { clear: both; border-bottom: 2px solid #000; margin-top: 130px; margin-bottom: 8px; margin-left: 80px; margin-right: 80px; }
 
-/* footer */
-.footer{
-  position:absolute;
-  bottom:20px;
-  left:0;
-  right:0;
-  text-align:center;
-  font-size:13px;
-}
+    .content-area { position: absolute; top: 160px; bottom: 100px; left: 80px; right: 80px; display: flex; gap: 40px; }
+    .col { flex: 1; overflow: hidden; }
 
-/* question style */
-.qbox{
-  font-size:13px;
-  line-height:1.35;
-  white-space:normal;
-}
+    /* ─────────────── Updated h1 - Only Black Box, Left Aligned ─────────────── */
+    .notes h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;                /* सफेद टेक्स्ट black background पर */
+      margin: 0 0 16px 0;
+      padding: 10px 16px;            /* सामान्य padding */
+      background: #000000;           /* पूरी तरह काला */
+      border-radius: 6px;
+      display: inline-block;         /* सिर्फ उतना जितना टेक्स्ट है */
+      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+      line-height: 1.35;
+      text-align: left;              /* बाएँ से शुरू */
+    }
+    /* कोई ::before, ::after या gradient नहीं - साफ black box */
 
-.qbox b{
-  font-size:14px;
-}
+    .notes h2 { font-size: 18px; margin: 20px 0 10px; color: #1e2937; }
+    .notes table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+    .notes th, .notes td { border: 1px solid #666; padding: 6px 8px; text-align: left; }
+    .notes th { background: #f0f0f0; font-weight: bold; }
+    .opt { margin-left: 16px; margin-bottom: 4px; }
+    .exp { margin: 12px 0 8px; padding: 8px 12px; border: 1px solid #666; border-radius: 6px; background: #f8f8f8; font-size: 13px; }
+    .ans { color: #047857; font-weight: bold; margin: 8px 0; font-size: 14px; }
+    .middleLine { position: absolute; top: 160px; bottom: 100px; left: 50%; width: 2px; background: #000; }
+    .bottomLine { position: absolute; bottom: 80px; left: 80px; right: 80px; border-top: 2px solid #000; }
 
-.option{
-  margin-left:10px;
-  margin-bottom:2px;
-}
+    /* Index page styles */
+    .index-page .page-header { height: 160px; background: #e6e6e6; }
+    .index-page .page-title {
+      top: 40px;
+      font-size: 32px;
+      background: #333;
+      color: white;
+      padding: 12px 50px;
+      border-radius: 8px;
+      display: inline-block;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
 
-.divider{
-  border-top:1px solid #000;
-  margin:4px 0;
-}
+    .index-page .content-area {
+      top: 170px;
+      left: 60px;
+      right: 60px;
+      bottom: 100px;
+      display: block;
+    }
 
-.exp{
-  border:1.5px solid #000;
-  border-radius:8px;
-  padding:4px;
-  font-size:12px;
-}
+    .index-page table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 16px;
+      line-height: 1.4;
+    }
 
-.ans{
-  font-weight:bold;
-  font-size:12px;
-}
+    .index-page th, .index-page td {
+      border: 1px solid #888;
+      padding: 10px 12px;
+      text-align: center;
+    }
 
-.qbox[contenteditable]{
-  outline:1px dashed #aaa;
-}
+    .index-page th {
+      background: #d0d0d0;
+      font-weight: bold;
+      color: #000;
+      font-size: 17px;
+    }
 
-</style>
+    .index-page td:first-child, .index-page th:first-child { width: 10%; }
+    .index-page td:nth-child(2) { text-align: left; padding-left: 18px; padding-right: 12px; }
+    .index-page td:nth-child(3) { width: 18%; font-weight: 600; }
+
+    .index-page .bottomLine { display: none; }
+  </style>
 </head>
-
 <body>
 
-<h2>Mockrise MCQ Book Generator</h2>
+<div class="container">
+  <h1 style="text-align:center; margin-bottom:20px;">Book Generator - Kalam Academy Style</h1>
 
-<div class="controls">
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="previewBook()"><i class="fas fa-eye"></i> Preview Book</button>
+    <button class="btn btn-danger" onclick="clearPreview()"><i class="fas fa-trash"></i> Clear Preview</button>
+    <button class="btn btn-success" onclick="generatePDF()"><i class="fas fa-file-pdf"></i> Generate PDF</button>
+  </div>
 
-<textarea id="jsonArea" rows="4" placeholder="JSON paste here"></textarea>
+  <div class="json-panel" id="jsonPanel">
+    <h3><i class="fas fa-code"></i> JSON Input</h3>
+    <textarea id="jsonInput" placeholder='[{"chapters": [{"title": "...", "notes": "...", "questions": [...]}]}]'></textarea>
+    <div style="margin-top:12px;">
+      <button class="btn btn-success" onclick="loadJSON()">Load & Preview</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('jsonPanel').style.display='none'">Close</button>
+    </div>
+  </div>
 
-<button class="orange" onclick="importJSON()">Import JSON</button>
-<button class="green" onclick="addManual()">Add Manual</button>
-<button class="blue" onclick="generatePDF()">Generate PDF</button>
-<button class="red" onclick="clearAll()">Clear</button>
+  <button class="btn btn-primary" onclick="document.getElementById('jsonPanel').style.display='block'" style="margin-bottom:20px;">
+    <i class="fas fa-plus"></i> Add/Update JSON
+  </button>
 
-<hr>
-
-<input id="q" placeholder="Question">
-<input id="o1" placeholder="Option A">
-<input id="o2" placeholder="Option B">
-<input id="o3" placeholder="Option C">
-<input id="o4" placeholder="Option D">
-<input id="ans" placeholder="Answer">
-<input id="exp" placeholder="Explanation">
-
+  <div class="preview-area" id="preview"></div>
 </div>
 
-<div id="preview"></div>
-
 <script>
-
 const { jsPDF } = window.jspdf;
+let bookData = { chapters: [] };
 
-let DATA=[];
-
-
-/* -------- ADD -------- */
-
-function addManual(){
-  DATA.push({
-    question:q.value,
-    options:[o1.value,o2.value,o3.value,o4.value],
-    answer:ans.value,
-    exp:exp.value
-  });
-
-  q.value=o1.value=o2.value=o3.value=o4.value=ans.value=exp.value="";
-  render();
+function saveJSONToStorage() {
+  const jsonText = document.getElementById('jsonInput').value.trim();
+  if (jsonText) localStorage.setItem('bookGeneratorJSON', jsonText);
 }
 
-
-/* -------- JSON -------- */
-
-function importJSON(){
-  DATA=JSON.parse(jsonArea.value);
-  render();
-}
-
-
-/* -------- CREATE PAGE -------- */
-
-function createPage(no){
-
-  const page=document.createElement("div");
-  page.className="page";
-
-  const header=document.createElement("div");
-  header.className="header";
-  header.innerText="Mockrise";
-
-  const footer=document.createElement("div");
-  footer.className="footer";
-  footer.innerText="Page "+no;
-
-  const col1=document.createElement("div");
-  col1.className="column";
-
-  const col2=document.createElement("div");
-  col2.className="column";
-
-  page.append(header,footer,col1,col2);
-
-  return {page,col1,col2};
-}
-
-
-/* -------- RENDER AUTO FLOW -------- */
-
-function render(){
-
-  preview.innerHTML="";
-
-  let pageNo=1;
-  let {page,col1,col2}=createPage(pageNo);
-  preview.appendChild(page);
-
-  let currentCol=col1;
-
-  DATA.forEach((item,i)=>{
-
-    const box=createQBox(item,i);
-
-    currentCol.appendChild(box);
-
-    // overflow check
-    if(currentCol.scrollHeight > currentCol.clientHeight){
-
-      currentCol.removeChild(box);
-
-      if(currentCol===col1){
-        currentCol=col2;
-        currentCol.appendChild(box);
-      }else{
-        ({page,col1,col2}=createPage(++pageNo));
-        preview.appendChild(page);
-        currentCol=col1;
-        currentCol.appendChild(box);
-      }
-    }
-  });
-}
-
-
-/* -------- QBOX -------- */
-
-function createQBox(item,i){
-
-  const div=document.createElement("div");
-  div.className="qbox";
-  div.contentEditable=true;
-
-  div.innerHTML=
-`<b>Q${i+1}. ${item.question}</b>
-<div class="option">A. ${item.options[0]}</div>
-<div class="option">B. ${item.options[1]}</div>
-<div class="option">C. ${item.options[2]}</div>
-<div class="option">D. ${item.options[3]}</div>
-<div class="divider"></div>
-<div class="exp">Explanation: ${item.exp}</div>
-<div class="ans">Answer: ${item.answer}</div>`;
-
-  return div;
-}
-
-
-/* -------- PDF -------- */
-
-async function generatePDF(){
-
-  const pages=document.querySelectorAll(".page");
-  const pdf=new jsPDF('p','px',[794,1123]);
-
-  for(let i=0;i<pages.length;i++){
-    const canvas=await html2canvas(pages[i],{scale:2});
-    const img=canvas.toDataURL("image/png");
-
-    if(i>0) pdf.addPage();
-    pdf.addImage(img,'PNG',0,0,794,1123);
+function loadJSONFromStorage() {
+  const saved = localStorage.getItem('bookGeneratorJSON');
+  if (saved) {
+    document.getElementById('jsonInput').value = saved;
+    try { bookData = JSON.parse(saved); } catch(e) {}
   }
-
-  pdf.save("Mockrise_Book.pdf");
 }
 
+function renderIndexAndChapters(container) {
+  const preview = container || document.getElementById('preview');
+  preview.innerHTML = '';
 
-/* -------- CLEAR -------- */
+  const ranges = calculatePageRanges();
 
-function clearAll(){
-  DATA=[];
-  preview.innerHTML="";
+  let indexContent = `
+    <div class="page-header"></div>
+    <div class="strip"></div>
+    <div class="page-title">विषय सूची</div>
+    <div class="content-area">
+      <table>
+        <thead>
+          <tr>
+            <th>क्र.सं.</th>
+            <th>अध्याय</th>
+            <th>पृष्ठ सं.</th>
+          </tr>
+        </thead>
+        <tbody id="indexBody"></tbody>
+      </table>
+    </div>
+  `;
+
+  const indexPage = document.createElement('div');
+  indexPage.className = 'page index-page';
+  indexPage.innerHTML = indexContent;
+
+  const tbody = indexPage.querySelector('#indexBody');
+
+  bookData.chapters.forEach((ch, i) => {
+    const range = ranges[i];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${(i+1)}.</td>
+      <td>${ch.title}</td>
+      <td>${range.start} – ${range.end}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  preview.appendChild(indexPage);
+
+  let globalPageNo = 1;
+  bookData.chapters.forEach((ch, chapterIdx) => {
+    const chapterNumber = chapterIdx + 1;
+    let page = createPage(globalPageNo, ch.title, chapterNumber, true, ch.title);
+    preview.appendChild(page);
+    globalPageNo++;
+
+    let left = page.querySelectorAll('.col')[0];
+    let right = page.querySelectorAll('.col')[1];
+    let current = left;
+
+    if (ch.notes) {
+      const notesDiv = document.createElement('div');
+      notesDiv.className = 'notes';
+      notesDiv.innerHTML = ch.notes;
+      current.appendChild(notesDiv);
+    }
+
+    ch.questions.forEach((q, qIdx) => {
+      const qDiv = document.createElement('div');
+      qDiv.className = 'qbox';
+      qDiv.innerHTML = `
+        <b>${qIdx+1}. ${q.question}</b><br>
+        <div class="opt">(1) ${q.options[0]}</div>
+        <div class="opt">(2) ${q.options[1]}</div>
+        <div class="opt">(3) ${q.options[2]}</div>
+        <div class="opt">(4) ${q.options[3]}</div>
+        <div class="ans">उत्तर: ${q.answer}</div>
+        ${q.exp ? `<div class="exp">व्याख्या: ${q.exp}</div>` : ''}
+      `;
+
+      current.appendChild(qDiv);
+
+      if (current.scrollHeight > current.clientHeight + 30) {
+        current.removeChild(qDiv);
+        if (current === left) {
+          current = right;
+        } else {
+          page = createPage(globalPageNo, ch.title, chapterNumber, false, ch.title);
+          preview.appendChild(page);
+          globalPageNo++;
+          left = page.querySelectorAll('.col')[0];
+          right = page.querySelectorAll('.col')[1];
+          current = left;
+        }
+        current.appendChild(qDiv);
+      }
+    });
+  });
 }
 
+function calculatePageRanges() {
+  let tempPageNo = 1;
+  let ranges = [];
+  bookData.chapters.forEach(ch => {
+    const start = tempPageNo;
+    tempPageNo++;
+    let colHeightUsed = ch.notes ? 120 : 0;
+    ch.questions.forEach(() => {
+      colHeightUsed += 85;
+      if (colHeightUsed > 920) {
+        tempPageNo++;
+        colHeightUsed = 85;
+      }
+    });
+    if (colHeightUsed > 0) tempPageNo++;
+    ranges.push({
+      start: start.toString().padStart(2, '0'),
+      end: (tempPageNo - 1).toString().padStart(2, '0')
+    });
+  });
+  return ranges;
+}
+
+function createPage(pageNo, title, chapterNumber, withHeader, chapterName) {
+  const p = document.createElement('div');
+  p.className = 'page';
+  let headerHTML = withHeader ? `
+    <div class="page-header"></div>
+    <div class="strip"></div>
+    <div class="page-title">${chapterNumber}. ${title}</div>
+  ` : `
+    <div class="running-header">
+      <div class="running-left">${chapterName}</div>
+      <div class="running-right">Mockrise</div>
+    </div>
+    <div class="header-line"></div>
+  `;
+  p.innerHTML = headerHTML + `
+    <div class="content-area">
+      <div class="col"></div>
+      <div class="col"></div>
+    </div>
+    <div class="middleLine"></div>
+    <div class="bottomLine"></div>
+    <div class="page-footer">${pageNo}</div>
+  `;
+  return p;
+}
+
+function loadJSON() {
+  try {
+    const jsonText = document.getElementById('jsonInput').value;
+    bookData = JSON.parse(jsonText);
+    saveJSONToStorage();
+    alert('JSON लोड हो गया!');
+    previewBook();
+  } catch(e) {
+    alert('JSON में त्रुटि!\n' + e.message);
+  }
+}
+
+function previewBook() {
+  if (!bookData.chapters?.length) {
+    alert("JSON पहले लोड करें या सही JSON पेस्ट करें!");
+    return;
+  }
+  renderIndexAndChapters();
+}
+
+function clearPreview() {
+  document.getElementById('preview').innerHTML = '';
+}
+
+async function generatePDF() {
+  if (!bookData.chapters?.length) {
+    alert("JSON पहले लोड करें!");
+    return;
+  }
+  const preview = document.getElementById('preview');
+  preview.innerHTML = '';
+  renderIndexAndChapters(preview);
+  await new Promise(r => setTimeout(r, 1200));
+  const pages = preview.querySelectorAll('.page');
+  const pdf = new jsPDF('p', 'px', [794, 1123]);
+  for (let i = 0; i < pages.length; i++) {
+    const canvas = await html2canvas(pages[i], { scale: 2.5, useCORS: true, letterRendering: true, logging: false });
+    const img = canvas.toDataURL('image/png');
+    if (i > 0) pdf.addPage();
+    pdf.addImage(img, 'PNG', 0, 0, 794, 1123);
+  }
+  pdf.save('Book.pdf');
+}
+
+window.addEventListener('load', loadJSONFromStorage);
 </script>
-
 </body>
 </html>
