@@ -49,6 +49,27 @@
     .btn-success { background: #10b981; color: white; }
     .btn-danger { background: #ef4444; color: white; }
 
+    .big-download-btn {
+      display: block;
+      margin: 30px auto;
+      padding: 18px 40px;
+      font-size: 22px;
+      font-weight: bold;
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 6px 15px rgba(16,185,129,0.4);
+      transition: all 0.3s;
+    }
+
+    .big-download-btn:hover {
+      background: #059669;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(16,185,129,0.5);
+    }
+
     .json-panel {
       display: none;
       background: white;
@@ -135,21 +156,19 @@
     .content-area { position: absolute; top: 160px; bottom: 100px; left: 80px; right: 80px; display: flex; gap: 40px; }
     .col { flex: 1; overflow: hidden; }
 
-    /* ─────────────── Updated h1 - Only Black Box, Left Aligned ─────────────── */
     .notes h1 {
       font-size: 22px;
       font-weight: 700;
-      color: #ffffff;                /* सफेद टेक्स्ट black background पर */
+      color: #ffffff;
       margin: 0 0 16px 0;
-      padding: 10px 16px;            /* सामान्य padding */
-      background: #000000;           /* पूरी तरह काला */
+      padding: 10px 16px;
+      background: #000000;
       border-radius: 6px;
-      display: inline-block;         /* सिर्फ उतना जितना टेक्स्ट है */
+      display: inline-block;
       box-shadow: 0 3px 8px rgba(0,0,0,0.25);
       line-height: 1.35;
-      text-align: left;              /* बाएँ से शुरू */
+      text-align: left;
     }
-    /* कोई ::before, ::after या gradient नहीं - साफ black box */
 
     .notes h2 { font-size: 18px; margin: 20px 0 10px; color: #1e2937; }
     .notes table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
@@ -161,7 +180,6 @@
     .middleLine { position: absolute; top: 160px; bottom: 100px; left: 50%; width: 2px; background: #000; }
     .bottomLine { position: absolute; bottom: 80px; left: 80px; right: 80px; border-top: 2px solid #000; }
 
-    /* Index page styles */
     .index-page .page-header { height: 160px; background: #e6e6e6; }
     .index-page .page-title {
       top: 40px;
@@ -221,7 +239,6 @@
   <div class="toolbar">
     <button class="btn btn-primary" onclick="previewBook()"><i class="fas fa-eye"></i> Preview Book</button>
     <button class="btn btn-danger" onclick="clearPreview()"><i class="fas fa-trash"></i> Clear Preview</button>
-    <button class="btn btn-success" onclick="generatePDF()"><i class="fas fa-file-pdf"></i> Generate PDF</button>
   </div>
 
   <div class="json-panel" id="jsonPanel">
@@ -235,6 +252,10 @@
 
   <button class="btn btn-primary" onclick="document.getElementById('jsonPanel').style.display='block'" style="margin-bottom:20px;">
     <i class="fas fa-plus"></i> Add/Update JSON
+  </button>
+
+  <button class="big-download-btn" onclick="generatePDF()">
+    <i class="fas fa-file-pdf"></i> PDF डाउनलोड करें (Mockrise Watermark के साथ)
   </button>
 
   <div class="preview-area" id="preview"></div>
@@ -429,19 +450,48 @@ async function generatePDF() {
     alert("JSON पहले लोड करें!");
     return;
   }
+
   const preview = document.getElementById('preview');
   preview.innerHTML = '';
   renderIndexAndChapters(preview);
-  await new Promise(r => setTimeout(r, 1200));
+
+  await new Promise(r => setTimeout(r, 1500)); // rendering के लिए समय
+
   const pages = preview.querySelectorAll('.page');
   const pdf = new jsPDF('p', 'px', [794, 1123]);
+
   for (let i = 0; i < pages.length; i++) {
-    const canvas = await html2canvas(pages[i], { scale: 2.5, useCORS: true, letterRendering: true, logging: false });
-    const img = canvas.toDataURL('image/png');
     if (i > 0) pdf.addPage();
+
+    const canvas = await html2canvas(pages[i], {
+      scale: 2.5,
+      useCORS: true,
+      letterRendering: true,
+      logging: false
+    });
+
+    const img = canvas.toDataURL('image/png');
     pdf.addImage(img, 'PNG', 0, 0, 794, 1123);
+
+    // Watermark: "Mockrise" diagonal
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(60);
+    pdf.setTextColor(180, 180, 180); // हल्का ग्रे
+    pdf.setGState(new pdf.GState({ opacity: 0.12 }));
+
+    // Diagonal placement - page के center से
+    const x = 397;  // center x
+    const y = 561;  // center y
+    pdf.saveGraphicsState();
+    pdf.translate(x, y);
+    pdf.rotate(-45);
+    pdf.text("Mockrise", -180, 0, { baseline: 'middle' }); // -180 से left shift ताकि center रहे
+    pdf.restoreGraphicsState();
+
+    pdf.setGState(new pdf.GState({ opacity: 1 })); // reset
   }
-  pdf.save('Book.pdf');
+
+  pdf.save('Mockrise_Book.pdf');
 }
 
 window.addEventListener('load', loadJSONFromStorage);
