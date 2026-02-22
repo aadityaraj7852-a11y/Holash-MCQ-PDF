@@ -153,8 +153,11 @@
     .notes table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
     .notes th, .notes td { border: 1px solid #666; padding: 6px 8px; text-align: left; }
     .notes th { background: #f0f0f0; font-weight: bold; }
+    
+    /* Added small margin to qbox for spacing */
+    .qbox { margin-bottom: 12px; }
     .opt { margin-left: 16px; margin-bottom: 4px; }
-    .exp { margin: 12px 0 8px; padding: 8px 12px; border: 1px solid #666; border-radius: 6px; background: #f8f8f8; font-size: 13px; }
+    .exp { margin: 12px 0 15px; padding: 8px 12px; border: 1px solid #666; border-radius: 6px; background: #f8f8f8; font-size: 13px; }
     .ans { color: #047857; font-weight: bold; margin: 8px 0; font-size: 14px; }
     .middleLine { position: absolute; top: 160px; bottom: 100px; left: 50%; width: 2px; background: #000; }
     .bottomLine { position: absolute; bottom: 80px; left: 80px; right: 80px; border-top: 2px solid #000; }
@@ -316,21 +319,29 @@ function renderIndexAndChapters(container) {
     }
 
     ch.questions.forEach((q, qIdx) => {
+      // Line break fix -> Replace \n with <br> to format smoothly without extra boxes
+      const qText = q.question ? q.question.replace(/\n/g, '<br>') : '';
+      const opt0 = (q.options && q.options[0]) ? q.options[0].replace(/\n/g, '<br>') : '';
+      const opt1 = (q.options && q.options[1]) ? q.options[1].replace(/\n/g, '<br>') : '';
+      const opt2 = (q.options && q.options[2]) ? q.options[2].replace(/\n/g, '<br>') : '';
+      const opt3 = (q.options && q.options[3]) ? q.options[3].replace(/\n/g, '<br>') : '';
+      const ansText = q.answer ? q.answer.replace(/\n/g, '<br>') : '';
+      
       const qDiv = document.createElement('div');
       qDiv.className = 'qbox';
       qDiv.innerHTML = `
-        <b>${qIdx+1}. ${q.question}</b><br>
-        <div class="opt">(1) ${q.options[0]}</div>
-        <div class="opt">(2) ${q.options[1]}</div>
-        <div class="opt">(3) ${q.options[2]}</div>
-        <div class="opt">(4) ${q.options[3]}</div>
-        <div class="ans">उत्तर: ${q.answer}</div>
-        ${q.exp ? `<div class="exp">व्याख्या: ${q.exp}</div>` : ''}
+        <div style="margin-bottom:6px;"><b>${qIdx+1}. ${qText}</b></div>
+        <div class="opt">(1) ${opt0}</div>
+        <div class="opt">(2) ${opt1}</div>
+        <div class="opt">(3) ${opt2}</div>
+        <div class="opt">(4) ${opt3}</div>
+        <div class="ans">उत्तर: ${ansText}</div>
       `;
 
       current.appendChild(qDiv);
 
-      if (current.scrollHeight > current.clientHeight + 30) {
+      // Check overflow ONLY for Question block (Optimizes Space)
+      if (current.scrollHeight > current.clientHeight + 10) {
         current.removeChild(qDiv);
         if (current === left) {
           current = right;
@@ -343,6 +354,30 @@ function renderIndexAndChapters(container) {
           current = left;
         }
         current.appendChild(qDiv);
+      }
+
+      // Check overflow Separately for Explanation Block
+      if (q.exp) {
+        const expText = q.exp.replace(/\n/g, '<br>');
+        const expDiv = document.createElement('div');
+        expDiv.className = 'exp';
+        expDiv.innerHTML = `<b>व्याख्या:</b> ${expText}`;
+        current.appendChild(expDiv);
+
+        if (current.scrollHeight > current.clientHeight + 10) {
+          current.removeChild(expDiv);
+          if (current === left) {
+            current = right;
+          } else {
+            page = createPage(globalPageNo, ch.title, chapterNumber, false, ch.title);
+            preview.appendChild(page);
+            globalPageNo++;
+            left = page.querySelectorAll('.col')[0];
+            right = page.querySelectorAll('.col')[1];
+            current = left;
+          }
+          current.appendChild(expDiv);
+        }
       }
     });
   });
@@ -431,7 +466,6 @@ async function generatePDF() {
   preview.innerHTML = '';
   renderIndexAndChapters(preview);
 
-  // रेंडर होने के लिए समय दें (मोबाइल पर जरूरी)
   await new Promise(r => setTimeout(r, 1800));
 
   const pages = preview.querySelectorAll('.page');
@@ -447,8 +481,8 @@ async function generatePDF() {
     compress: true
   });
 
-  const scale = 1.3;           // 1.0 = बहुत छोटा लेकिन धुंधला, 1.5 = अच्छा लेकिन बड़ा साइज़
-  const quality = 0.78;        // 0.70 = छोटा साइज़, 0.85 = बेहतर क्वालिटी
+  const scale = 1.3;
+  const quality = 0.78;
 
   for (let i = 0; i < pages.length; i++) {
     const canvas = await html2canvas(pages[i], {
