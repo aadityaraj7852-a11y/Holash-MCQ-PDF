@@ -170,23 +170,24 @@
 </head>
 <body>
 
-<!-- TOP MASTER SWITCH -->
 <div class="main-app-switcher">
     <button id="btnAppA" class="active" onclick="switchApp('A')"><i class="fas fa-book"></i> PDF Book Generator</button>
     <button id="btnAppB" onclick="switchApp('B')"><i class="fas fa-file-word"></i> DOCX MCQ Editor</button>
 </div>
 
-<!-- =========================================================================
-     APP A CONTAINER : BOOK GENERATOR
-     ========================================================================= -->
 <div id="containerA">
     <div class="container">
       <h1 style="text-align:center; margin-top:0; margin-bottom:20px; font-family: 'Poppins', sans-serif;">Book Generator - Mockrise</h1>
 
       <div class="dashboard-grid">
-        <!-- Left Panel: Form & Logo Settings -->
         <div class="panel">
+          
           <div class="form-group" style="background: #f8fafc; padding: 12px; border: 1px dashed #cbd5e1; border-radius: 8px; margin-bottom: 20px;">
+            <label><i class="fas fa-heading"></i> हेडर ब्रांडिंग (Header Branding)</label>
+            <input type="text" id="brandText" class="form-control" value="Mockrise" placeholder="उदा: Mockrise या अपना नाम" oninput="updateBrandText()">
+            
+            <hr style="margin: 15px 0; border: 0; border-top: 1px dashed #cbd5e1;">
+            
             <label><i class="fas fa-image"></i> कस्टम वॉटरमार्क (Gallery)</label>
             <input type="file" id="logoUpload" class="form-control" accept="image/*" onchange="handleLogoUpload()">
             <div style="margin-top: 15px; display: grid; gap: 12px;">
@@ -229,7 +230,6 @@
           </div>
         </div>
 
-        <!-- Right Panel: List & Actions -->
         <div class="panel">
           <h3><i class="fas fa-list"></i> जुड़े हुए चैप्टर (<span id="chapCount">0</span>)</h3>
           <div id="chapterList" style="min-height: 150px; margin-bottom: 15px;">
@@ -247,9 +247,6 @@
     </div>
 </div>
 
-<!-- =========================================================================
-     APP B CONTAINER : MCQ DOCX EDITOR
-     ========================================================================= -->
 <div id="containerB" style="display: none;">
     <div style="max-width:1200px;margin:auto">  
       <div class="toolbar">  
@@ -265,7 +262,6 @@
           <label style="font-size: 16px;">JSON Import (Paste Universal JSON Here)</label>  
           <textarea id="jsonAreaB" style="height:250px;font-family:monospace" placeholder='[\n  {\n    "module": "GK",\n    "question": "Sample Question?",\n    "option": ["A", "B", "C", "D"],\n    "answer": "A",\n    "solution": "Explain",\n    "pm": 2,\n    "nm": 0.66\n  }\n]'></textarea>  
           
-          <!-- DEFAULT PM / NM SETTINGS -->
           <div style="display: flex; gap: 10px; margin-top: 8px; background: #e0f2fe; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd;">
             <div style="flex: 1;">
                 <label style="margin-top: 0; font-size: 13px; color: #0369a1;">Default +ve Mark (pm)</label>
@@ -340,12 +336,21 @@ function updateWatermark() {
     saveToLocal();
 }
 
+function updateBrandText() {
+    const brandName = document.getElementById('brandText').value;
+    document.querySelectorAll('#containerA .running-right').forEach(el => {
+        el.innerText = brandName;
+    });
+    saveToLocal();
+}
+
 function saveToLocal() {
     localStorage.setItem('mockriseBook', JSON.stringify(bookData));
     localStorage.setItem('mockriseLogo', customLogoBase64);
     localStorage.setItem('wmRot', document.getElementById('wmRotation').value);
     localStorage.setItem('wmZoom', document.getElementById('wmZoom').value);
     localStorage.setItem('wmOp', document.getElementById('wmOpacity').value);
+    localStorage.setItem('mockriseBrand', document.getElementById('brandText').value);
 }
 
 function loadFromLocal() {
@@ -357,6 +362,10 @@ function loadFromLocal() {
     let sRot = localStorage.getItem('wmRot');
     let sZoom = localStorage.getItem('wmZoom');
     let sOp = localStorage.getItem('wmOp');
+    let sBrand = localStorage.getItem('mockriseBrand');
+    
+    if (sBrand !== null) document.getElementById('brandText').value = sBrand;
+
     if(sRot !== null) {
         document.getElementById('wmRotation').value = sRot;
         document.getElementById('wmZoom').value = sZoom;
@@ -515,7 +524,11 @@ function appendWithSplit(htmlStr, baseClassName, currentTarget, nextColFunc, isC
 function createPage(pageNo, title, chapterNum, isFirst, chapName, chIndex) {
     const p = document.createElement('div'); p.className = 'page';
     if (isFirst && chIndex !== undefined) p.id = `chapter-page-${chIndex}`;
-    let header = isFirst ? `<div class="page-header"></div><div class="strip"></div><div class="page-title" contenteditable="true" spellcheck="false">${chapterNum}. ${title}</div>` : `<div class="running-header"><div class="running-left" contenteditable="true" spellcheck="false">${chapName}</div><div class="running-right">Mockrise</div></div><div class="header-line"></div>`;
+    
+    // Dynamic Brand Name 
+    const brandName = document.getElementById('brandText') ? document.getElementById('brandText').value : 'Mockrise';
+    
+    let header = isFirst ? `<div class="page-header"></div><div class="strip"></div><div class="page-title" contenteditable="true" spellcheck="false">${chapterNum}. ${title}</div>` : `<div class="running-header"><div class="running-left" contenteditable="true" spellcheck="false">${chapName}</div><div class="running-right" contenteditable="true" spellcheck="false">${brandName}</div></div><div class="header-line"></div>`;
     let watermarkHTML = customLogoBase64 ? `<img class="watermark" src="${customLogoBase64}" />` : "";
     p.innerHTML = `${watermarkHTML}${header}<div class="content-area"><div class="col col-left"></div><div class="col col-right"></div></div><div class="middleLine"></div><div class="bottomLine"></div><div class="page-footer">${pageNo}</div>`;
     return p;
