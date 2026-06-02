@@ -88,12 +88,14 @@
     #containerA .page-footer { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #000; color: #fff; padding: 6px 24px; border-radius: 20px; font-size: 15px; font-weight: 600; min-width: 60px; text-align: center; }
     #containerA .page-header { height: 140px; background: #e6e6e6; position: absolute; top:0; left:0; width:100%; z-index: 1; }
     #containerA .strip { position: absolute; top: 0; left: 0; width: 55px; height: 140px; background: #dcdcdc; z-index: 2; }
-    #containerA .page-title { position: absolute; top: 70px; left: 70px; right: 70px; transform: translateY(-50%); text-align: center; font-weight: 700; color: #1e2937; font-size: 26px; line-height: 1.3; margin: 0; max-height: 80px; overflow: hidden; }
-    #containerA .running-header { position: absolute; top: 105px; left: 80px; right: 80px; font-size: 14px; font-weight: 700; color: #222; z-index: 2;}
+    
+    /* LEFT/RIGHT MARGIN SET EXACTLY TO 60px */
+    #containerA .page-title { position: absolute; top: 70px; left: 60px; right: 60px; transform: translateY(-50%); text-align: center; font-weight: 700; color: #1e2937; font-size: 26px; line-height: 1.3; margin: 0; max-height: 80px; overflow: hidden; }
+    #containerA .running-header { position: absolute; top: 105px; left: 60px; right: 60px; font-size: 14px; font-weight: 700; color: #222; z-index: 2;}
     #containerA .running-left { float: left; }
     #containerA .running-right { float: right; font-family: 'Poppins', sans-serif;}
-    #containerA .header-line { position:absolute; top: 130px; left: 80px; right: 80px; height: 2px; background: #000; z-index: 2;}
-    #containerA .content-area { position: absolute; top: 160px; bottom: 100px; left: 80px; right: 80px; display: flex; gap: 40px; }
+    #containerA .header-line { position:absolute; top: 130px; left: 60px; right: 60px; height: 2px; background: #000; z-index: 2;}
+    #containerA .content-area { position: absolute; top: 160px; bottom: 100px; left: 60px; right: 60px; display: flex; gap: 40px; }
     #containerA .col { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
 
     #containerA .notes h1 { font-size: 22px; font-weight: 700; color: #ffffff; margin: 0 0 16px 0; padding: 10px 16px; background: #000000; border-radius: 6px; display: inline-block; box-shadow: 0 3px 8px rgba(0,0,0,0.25); }
@@ -116,7 +118,7 @@
     #containerA .exp.split-bottom { border-top: none !important; border-top-left-radius: 0 !important; border-top-right-radius: 0 !important; margin-top: 0 !important; padding-top: 15px !important; }
 
     #containerA .middleLine { position: absolute; top: 160px; bottom: 100px; left: 50%; width: 2px; background: #000; z-index: 2; }
-    #containerA .bottomLine { position: absolute; bottom: 80px; left: 80px; right: 80px; border-top: 2px solid #000; z-index: 2;}
+    #containerA .bottomLine { position: absolute; bottom: 80px; left: 60px; right: 60px; border-top: 2px solid #000; z-index: 2;}
 
     #containerA .index-page .page-header { height: 160px; background: #e6e6e6; }
     #containerA .index-page .page-title { top: 80px; transform: translateY(-50%); font-size: 32px; background: #333; color: white; padding: 12px 50px; border-radius: 8px; left: 50%; transform: translate(-50%, -50%); width: auto; }
@@ -125,7 +127,6 @@
     #containerA .index-page th, #containerA .index-page td { border: 1px solid #888; padding: 10px; text-align: center; }
     #containerA .index-page th { background: #d0d0d0; font-weight: bold; }
     #containerA .index-page td:nth-child(2) { text-align: left; padding-left: 18px; }
-
 
     /* =========================================================
        APP B: MCQ EDITOR CSS (Scoped to #containerB)
@@ -237,7 +238,11 @@
           </div>
           <div style="display: flex; flex-direction: column; gap: 10px;">
             <button class="btn btn-primary" onclick="previewBook()" style="justify-content: center;"><i class="fas fa-eye"></i> Preview Book</button>
-            <button class="btn btn-success" onclick="generatePDF()" id="pdfBtn" style="justify-content: center;"><i class="fas fa-file-pdf"></i> Generate PDF (Download)</button>
+            
+            <button class="btn btn-success" onclick="generateUltraHDPDF()" id="pdfBtn" style="justify-content: center; background: #059669; font-size: 16px;">
+                <i class="fas fa-file-download"></i> Download Ultra HD PDF
+            </button>
+            
             <button class="btn btn-danger" onclick="clearAll()" style="justify-content: center;"><i class="fas fa-trash"></i> सब डिलीट करें</button>
           </div>
         </div>
@@ -596,21 +601,49 @@ function previewBook() {
     const indexPage = createIndexPage(chapterPages); preview.insertBefore(indexPage, preview.firstChild);
 }
 
-async function generatePDF() {
+// ULTRA HD PDF DIRECT DOWNLOAD METHOD
+async function generateUltraHDPDF() {
     const preview = document.getElementById('preview');
-    if (!preview.innerHTML || preview.innerHTML.trim() === '') { alert("कृपया पहले 'Preview Book' पर क्लिक करें!"); return; }
-    const pdfBtn = document.getElementById('pdfBtn'); pdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...'; pdfBtn.disabled = true;
-    await new Promise(r => setTimeout(r, 1000));
+    if (!preview.innerHTML || preview.innerHTML.trim() === '') { 
+        alert("कृपया पहले 'Preview Book' पर क्लिक करें!"); 
+        return; 
+    }
+    
+    const pdfBtn = document.getElementById('pdfBtn'); 
+    pdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Ultra HD PDF...'; 
+    pdfBtn.disabled = true;
+    
+    // Give UI a moment to update the button text
+    await new Promise(r => setTimeout(r, 100));
+    
     const pages = document.querySelectorAll('#containerA .page');
-    if (pages.length === 0) { alert("कोई पेज नहीं मिला!"); pdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Generate PDF (Download)'; pdfBtn.disabled = false; return; }
+    if (pages.length === 0) { 
+        alert("कोई पेज नहीं मिला!"); 
+        pdfBtn.innerHTML = '<i class="fas fa-file-download"></i> Download Ultra HD PDF'; 
+        pdfBtn.disabled = false; 
+        return; 
+    }
+    
     const pdf = new jsPDF({ unit: 'px', format: [794, 1123], compress: true });
+    
     for (let i = 0; i < pages.length; i++) {
         if (i > 0) pdf.addPage();
-        const canvas = await html2canvas(pages[i], { scale: 1.5, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff' });
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 794, 1123);
+        // QUALITY UPGRADE: Scale 4 renders a massive 4K resolution canvas per page.
+        // It will never pixelate even if you zoom heavily.
+        const canvas = await html2canvas(pages[i], { 
+            scale: 4, 
+            useCORS: true, 
+            allowTaint: true, 
+            logging: false, 
+            backgroundColor: '#ffffff' 
+        });
+        pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, 794, 1123);
     }
-    pdf.save('Mockrise_Book.pdf');
-    pdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Generate PDF (Download)'; pdfBtn.disabled = false;
+    
+    pdf.save('Mockrise_Book_UltraHD.pdf');
+    
+    pdfBtn.innerHTML = '<i class="fas fa-file-download"></i> Download Ultra HD PDF'; 
+    pdfBtn.disabled = false;
 }
 
 /* =========================================================================
