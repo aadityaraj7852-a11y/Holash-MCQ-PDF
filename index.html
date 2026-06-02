@@ -171,18 +171,24 @@
 </head>
 <body>
 
+<!-- TOP MASTER SWITCH -->
 <div class="main-app-switcher">
     <button id="btnAppA" class="active" onclick="switchApp('A')"><i class="fas fa-book"></i> PDF Book Generator</button>
     <button id="btnAppB" onclick="switchApp('B')"><i class="fas fa-file-word"></i> DOCX MCQ Editor</button>
 </div>
 
+<!-- =========================================================================
+     APP A CONTAINER : BOOK GENERATOR
+     ========================================================================= -->
 <div id="containerA">
     <div class="container">
       <h1 style="text-align:center; margin-top:0; margin-bottom:20px; font-family: 'Poppins', sans-serif;">Book Generator - Mockrise</h1>
 
       <div class="dashboard-grid">
+        <!-- Left Panel: Form & Logo Settings -->
         <div class="panel">
           
+          <!-- BRANDING & LOGO SETTINGS -->
           <div class="form-group" style="background: #f8fafc; padding: 12px; border: 1px dashed #cbd5e1; border-radius: 8px; margin-bottom: 20px;">
             <label><i class="fas fa-heading"></i> हेडर ब्रांडिंग (Header Branding)</label>
             <input type="text" id="brandText" class="form-control" value="Mockrise" placeholder="उदा: Mockrise या अपना नाम" oninput="updateBrandText()">
@@ -231,6 +237,7 @@
           </div>
         </div>
 
+        <!-- Right Panel: List & Actions -->
         <div class="panel">
           <h3><i class="fas fa-list"></i> जुड़े हुए चैप्टर (<span id="chapCount">0</span>)</h3>
           <div id="chapterList" style="min-height: 150px; margin-bottom: 15px;">
@@ -239,8 +246,9 @@
           <div style="display: flex; flex-direction: column; gap: 10px;">
             <button class="btn btn-primary" onclick="previewBook()" style="justify-content: center;"><i class="fas fa-eye"></i> Preview Book</button>
             
-            <button class="btn btn-success" onclick="generateUltraHDPDF()" id="pdfBtn" style="justify-content: center; background: #059669; font-size: 16px;">
-                <i class="fas fa-file-download"></i> Download Ultra HD PDF
+            <!-- SMART COMPRESSION DOWNLOAD BUTTON (FAST & SMALL) -->
+            <button class="btn btn-success" onclick="generateOptimizedPDF()" id="pdfBtn" style="justify-content: center; background: #059669; font-size: 16px;">
+                <i class="fas fa-file-download"></i> Download PDF (Optimized Size)
             </button>
             
             <button class="btn btn-danger" onclick="clearAll()" style="justify-content: center;"><i class="fas fa-trash"></i> सब डिलीट करें</button>
@@ -252,6 +260,9 @@
     </div>
 </div>
 
+<!-- =========================================================================
+     APP B CONTAINER : MCQ DOCX EDITOR
+     ========================================================================= -->
 <div id="containerB" style="display: none;">
     <div style="max-width:1200px;margin:auto">  
       <div class="toolbar">  
@@ -267,6 +278,7 @@
           <label style="font-size: 16px;">JSON Import (Paste Universal JSON Here)</label>  
           <textarea id="jsonAreaB" style="height:250px;font-family:monospace" placeholder='[\n  {\n    "module": "GK",\n    "question": "Sample Question?",\n    "option": ["A", "B", "C", "D"],\n    "answer": "A",\n    "solution": "Explain",\n    "pm": 2,\n    "nm": 0.66\n  }\n]'></textarea>  
           
+          <!-- DEFAULT PM / NM SETTINGS -->
           <div style="display: flex; gap: 10px; margin-top: 8px; background: #e0f2fe; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd;">
             <div style="flex: 1;">
                 <label style="margin-top: 0; font-size: 13px; color: #0369a1;">Default +ve Mark (pm)</label>
@@ -459,7 +471,7 @@ function deleteChapter(idx) {
 }
 
 function clearAll() {
-  if(confirm("पूरा डेटा डिलीट हो जाएगा। क्या आप श्योर हैं?")) {
+  if(confirm("पूरा डेटा डिलीट ডান हो जाएगा। क्या आप श्योर हैं?")) {
     bookData = { chapters: [] }; customLogoBase64 = ""; document.getElementById('logoUpload').value = ""; 
     saveToLocal(); cancelEdit(); updateChapterUI(); document.getElementById('preview').innerHTML = '';
   }
@@ -601,8 +613,10 @@ function previewBook() {
     const indexPage = createIndexPage(chapterPages); preview.insertBefore(indexPage, preview.firstChild);
 }
 
-// ULTRA HD PDF DIRECT DOWNLOAD METHOD
-async function generateUltraHDPDF() {
+// -------------------------------------------------------------
+// NEW: OPTIMIZED PDF DOWNLOAD (Small Size, Direct Download)
+// -------------------------------------------------------------
+async function generateOptimizedPDF() {
     const preview = document.getElementById('preview');
     if (!preview.innerHTML || preview.innerHTML.trim() === '') { 
         alert("कृपया पहले 'Preview Book' पर क्लिक करें!"); 
@@ -610,39 +624,50 @@ async function generateUltraHDPDF() {
     }
     
     const pdfBtn = document.getElementById('pdfBtn'); 
-    pdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Ultra HD PDF...'; 
+    pdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Compressing & Generating PDF...'; 
     pdfBtn.disabled = true;
     
-    // Give UI a moment to update the button text
+    // Give UI time to update
     await new Promise(r => setTimeout(r, 100));
     
     const pages = document.querySelectorAll('#containerA .page');
     if (pages.length === 0) { 
         alert("कोई पेज नहीं मिला!"); 
-        pdfBtn.innerHTML = '<i class="fas fa-file-download"></i> Download Ultra HD PDF'; 
+        pdfBtn.innerHTML = '<i class="fas fa-file-download"></i> Download PDF (Optimized Size)'; 
         pdfBtn.disabled = false; 
         return; 
     }
     
-    const pdf = new jsPDF({ unit: 'px', format: [794, 1123], compress: true });
+    // Configure jsPDF with compression enabled
+    const pdf = new jsPDF({ unit: 'pt', format: 'a4', compress: true });
     
     for (let i = 0; i < pages.length; i++) {
         if (i > 0) pdf.addPage();
-        // QUALITY UPGRADE: Scale 4 renders a massive 4K resolution canvas per page.
-        // It will never pixelate even if you zoom heavily.
+        
+        // MAGIC FORMULA: scale 2 (Good Quality) + jpeg 0.60 (High Size Compression)
         const canvas = await html2canvas(pages[i], { 
-            scale: 4, 
+            scale: 2, 
             useCORS: true, 
             allowTaint: true, 
             logging: false, 
             backgroundColor: '#ffffff' 
         });
-        pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, 794, 1123);
+        
+        // Convert to highly compressed JPEG
+        const imgData = canvas.toDataURL('image/jpeg', 0.60);
+        
+        // Calculate dimensions to fit A4 exactly
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        // Use 'FAST' compression alias in jsPDF
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
     }
     
-    pdf.save('Mockrise_Book_UltraHD.pdf');
+    // Save file
+    pdf.save('Mockrise_Book_Optimized.pdf');
     
-    pdfBtn.innerHTML = '<i class="fas fa-file-download"></i> Download Ultra HD PDF'; 
+    pdfBtn.innerHTML = '<i class="fas fa-file-download"></i> Download PDF (Optimized Size)'; 
     pdfBtn.disabled = false;
 }
 
