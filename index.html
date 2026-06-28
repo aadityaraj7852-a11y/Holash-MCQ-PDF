@@ -301,7 +301,7 @@
             <button id="exportBtnB" class="btn btn-blue" style="font-size:16px; padding:12px;"><i class="fa fa-file-word"></i> Export DOCX</button>  
           </div>  
           <div class="muted-small" style="margin-top:12px; line-height: 1.4;">
-            <b>Tip:</b> आप एक साथ कई JSON पेस्ट करके Import कर सकते हैं। पुराने प्रश्न डिलीट नहीं होंगे, डुप्लीकेट अपने आप छोड़ दिए जाएंगे। 
+            <b>Tip:</b> आप एक साथ कई JSON पेस्ट करके Import कर सकते हैं। पुराने प्रश्न डिलीट नहीं होंगे, डुप्लीकेट अपने आप छोड़ दिए जाएंगे। 
           </div>  
         </div>  
 
@@ -471,7 +471,7 @@ function deleteChapter(idx) {
 }
 
 function clearAll() {
-  if(confirm("पूरा डेटा डिलीट ডান हो जाएगा। क्या आप श्योर हैं?")) {
+  if(confirm("पूरा डेटा डिलीट हो जाएगा। क्या आप श्योर हैं?")) {
     bookData = { chapters: [] }; customLogoBase64 = ""; document.getElementById('logoUpload').value = ""; 
     saveToLocal(); cancelEdit(); updateChapterUI(); document.getElementById('preview').innerHTML = '';
   }
@@ -502,17 +502,53 @@ function addChapter() {
   saveToLocal(); updateChapterUI(); previewBook(); 
 }
 
-function appendWithSplit(htmlStr, baseClassName, currentTarget, nextColFunc, isContinuation = false) {
+// -------------------------------------------------------------
+// [FIXED] appendWithSplit: prevents infinite loop on large HTML blocks
+// -------------------------------------------------------------
+function appendWithSplit(htmlStr, baseClassName, currentTarget, nextColFunc, isContinuation = false, depth = 0) {
+    // 1. Safety break to completely stop any infinite loops
+    if (depth > 20) {
+        const forced = document.createElement('div');
+        forced.className = baseClassName;
+        forced.innerHTML = htmlStr;
+        currentTarget.appendChild(forced);
+        return currentTarget;
+    }
+
     const div = document.createElement('div');
     div.className = baseClassName + (isContinuation ? " split-bottom" : "");
     div.innerHTML = htmlStr;
-    div.setAttribute('contenteditable', 'true'); div.setAttribute('spellcheck', 'false');
+    div.setAttribute('contenteditable', 'true'); 
+    div.setAttribute('spellcheck', 'false');
     currentTarget.appendChild(div);
 
-    if (currentTarget.scrollHeight <= currentTarget.clientHeight + 2) return currentTarget; 
+    // 2. If it fits perfectly, return current target
+    if (currentTarget.scrollHeight <= currentTarget.clientHeight + 2) {
+        return currentTarget;
+    }
 
     currentTarget.removeChild(div);
-    let words = htmlStr.split(" "); let part = ""; let fittedIndex = -1;
+
+    // 3. If target is empty but content still doesn't fit, it's just too big for one page.
+    // Force it to render here to prevent infinite new pages, then return a new page for next items.
+    if (currentTarget.innerHTML.trim() === "") {
+        currentTarget.appendChild(div);
+        return nextColFunc();
+    }
+
+    // 4. If content is HTML structure (table, div, list), DON'T split by spaces (it breaks tags).
+    // Move the entire block to the next column instead.
+    const trimmedHTML = htmlStr.trim().toLowerCase();
+    if (trimmedHTML.startsWith("<table") || trimmedHTML.startsWith("<div") || trimmedHTML.startsWith("<ul") || trimmedHTML.startsWith("<ol") || trimmedHTML.startsWith("<h")) {
+        currentTarget = nextColFunc();
+        return appendWithSplit(htmlStr, baseClassName, currentTarget, nextColFunc, false, depth + 1);
+    }
+
+    // 5. Try splitting simple text by words
+    let words = htmlStr.split(" "); 
+    let part = ""; 
+    let fittedIndex = -1;
+    
     const tempDiv = document.createElement('div');
     tempDiv.className = baseClassName + (isContinuation ? " split-bottom" : "");
     currentTarget.appendChild(tempDiv);
@@ -520,22 +556,33 @@ function appendWithSplit(htmlStr, baseClassName, currentTarget, nextColFunc, isC
     for (let i = 0; i < words.length; i++) {
         let testText = part + (i === 0 ? "" : " ") + words[i];
         tempDiv.innerHTML = testText;
-        if (currentTarget.scrollHeight > currentTarget.clientHeight) break; 
-        else { part = testText; fittedIndex = i; }
+        if (currentTarget.scrollHeight > currentTarget.clientHeight) {
+            break; 
+        } else { 
+            part = testText; 
+            fittedIndex = i; 
+        }
     }
     tempDiv.remove();
 
+    // 6. If not even a single word fits, move to next column
     if (part.trim() === "" || fittedIndex === -1) {
         currentTarget = nextColFunc();
-        return appendWithSplit(htmlStr, baseClassName, currentTarget, nextColFunc, false);
+        return appendWithSplit(htmlStr, baseClassName, currentTarget, nextColFunc, false, depth + 1);
     }
+
+    // 7. Render the part that fits
     const topPart = document.createElement('div');
     topPart.className = baseClassName + (isContinuation ? " split-bottom split-top" : " split-top");
-    topPart.innerHTML = part; topPart.setAttribute('contenteditable', 'true'); topPart.setAttribute('spellcheck', 'false');
+    topPart.innerHTML = part; 
+    topPart.setAttribute('contenteditable', 'true'); 
+    topPart.setAttribute('spellcheck', 'false');
     currentTarget.appendChild(topPart);
+    
+    // 8. Send remaining to next column
     let remainingHTML = words.slice(fittedIndex + 1).join(" ");
     currentTarget = nextColFunc();
-    return appendWithSplit(remainingHTML, baseClassName, currentTarget, nextColFunc, true);
+    return appendWithSplit(remainingHTML, baseClassName, currentTarget, nextColFunc, true, depth + 1);
 }
 
 function createPage(pageNo, title, chapterNum, isFirst, chapName, chIndex) {
@@ -614,7 +661,7 @@ function previewBook() {
 }
 
 // -------------------------------------------------------------
-// NEW: OPTIMIZED PDF DOWNLOAD (Small Size, Direct Download)
+// OPTIMIZED PDF DOWNLOAD
 // -------------------------------------------------------------
 async function generateOptimizedPDF() {
     const preview = document.getElementById('preview');
@@ -627,7 +674,6 @@ async function generateOptimizedPDF() {
     pdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Compressing & Generating PDF...'; 
     pdfBtn.disabled = true;
     
-    // Give UI time to update
     await new Promise(r => setTimeout(r, 100));
     
     const pages = document.querySelectorAll('#containerA .page');
@@ -638,13 +684,11 @@ async function generateOptimizedPDF() {
         return; 
     }
     
-    // Configure jsPDF with compression enabled
     const pdf = new jsPDF({ unit: 'pt', format: 'a4', compress: true });
     
     for (let i = 0; i < pages.length; i++) {
         if (i > 0) pdf.addPage();
         
-        // MAGIC FORMULA: scale 2 (Good Quality) + jpeg 0.60 (High Size Compression)
         const canvas = await html2canvas(pages[i], { 
             scale: 2, 
             useCORS: true, 
@@ -653,18 +697,14 @@ async function generateOptimizedPDF() {
             backgroundColor: '#ffffff' 
         });
         
-        // Convert to highly compressed JPEG
         const imgData = canvas.toDataURL('image/jpeg', 0.60);
         
-        // Calculate dimensions to fit A4 exactly
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
-        // Use 'FAST' compression alias in jsPDF
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
     }
     
-    // Save file
     pdf.save('Mockrise_Book_Optimized.pdf');
     
     pdfBtn.innerHTML = '<i class="fas fa-file-download"></i> Download PDF (Optimized Size)'; 
